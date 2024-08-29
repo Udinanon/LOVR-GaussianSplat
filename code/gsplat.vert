@@ -146,7 +146,7 @@ vec4 lovrmain(){
     // Invter the determinant
     float det_inv = 1.f / det;
 	// Some sort of reordered and rescaled representation of the 2D covariance, for the fragment shader
-	conic = vec3(cov2d.z * det_inv, -cov2d.y * det_inv, cov2d.x * det_inv);
+	conic = vec3(cov2d.z * det_inv, cov2d.y * det_inv, cov2d.x * det_inv);
 	
     // I think this computes the size of the quad in pixels given the 2D gaussian 
     // times 3 vause it's a gaussian interval of 99%??
