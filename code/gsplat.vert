@@ -23,6 +23,7 @@ Constants{
     int render_mode;
 };
 
+#define SH_C0 0.28209479177387814f
 
 // To pass the computed data to the Fragment shader
 out vec3 color;
@@ -84,11 +85,6 @@ vec3 computeCov2D(vec4 mean_view, float focal_x, float focal_y, float tan_fovx, 
     mat3 W = transpose(mat3(viewmatrix));
     // Doesn't work well, why is this bad?
     //J=transpose(mat3(Projection));
-    // W = W * mat3(
-    //     0, 0, -1,
-    //     0, 1, 0,
-    //     -1, 0, 0
-    // );
     mat3 T = W * J;
 
     // Apply to 3D Covariance matrix
@@ -174,7 +170,7 @@ vec4 lovrmain(){
 	}
 
 
-    color = vec3(colors[InstanceIndex]);
-    //color = vec4(colors[InstanceIndex], 1.);
+    color = SH_C0 * vec3(colors[InstanceIndex]);
+    color += 0.5f;
     return g_pos_screen;
 }

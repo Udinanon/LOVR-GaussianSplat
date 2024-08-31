@@ -16,7 +16,7 @@ vec4 lovrmain(){
         return out_color;
     }
 
-    float power = -0.5f * (conic.x * coordxy.x * coordxy.x + conic.z * coordxy.y * coordxy.y) - conic.y * coordxy.x * coordxy.y;
+    float power = -0.5f * (conic.x * coordxy.x * coordxy.x + conic.z * coordxy.y * coordxy.y) +conic.y * coordxy.x * coordxy.y;
     if (power > 0.f)
         discard;
     float opacity = min(0.99f, alpha * exp(power));

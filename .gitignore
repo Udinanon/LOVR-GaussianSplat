@@ -6,12 +6,9 @@
 *.log
 *.mkv
 *.gif
-/Engine/
-/Project/Assets/
-/API Docs/
-/Screens/
-/LibCurl/
-projects.md
+*.ply
+*.ipynb
+
 # Compiled Lua sources
 luac.out
 
