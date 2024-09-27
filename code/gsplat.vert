@@ -14,7 +14,10 @@ layout(set = 2, binding = 3) buffer Opacities {
 layout(set = 2, binding = 4) buffer Colors {
     vec3 colors[];
 };
-layout(set = 2, binding = 5) buffer Debug {
+layout(set = 2, binding = 5) buffer Indeces {
+    int indeces[];
+};
+layout(set = 2, binding = 9) buffer Debug {
     float debug[128];
 };
 Constants{     
@@ -30,6 +33,7 @@ out vec3 color;
 out vec3 conic;
 out vec2 coordxy;
 out float alpha;
+out vec2 render_index;
 
 
 // Taken from the Gaussian Viewer, thanks https://github.com/limacv/GaussianSplattingViewer
@@ -98,9 +102,12 @@ vec3 computeCov2D(vec4 mean_view, float focal_x, float focal_y, float tan_fovx, 
 
 // Our main
 vec4 lovrmain(){
-
+    // Draw the splats from back to front, using the sorted buffer
+    int index = indeces[InstanceIndex];
+    render_index = vec2(index, InstanceIndex);
     // Load positon data and convert to View space and screen space
-    vec4 world_pos = vec4(positions[InstanceIndex], 1.);
+    //index = InstanceIndex;
+    vec4 world_pos = vec4(positions[index], 1.);
     vec4 g_pos_view = ViewFromLocal * world_pos; 
     vec4 g_pos_screen = Projection * g_pos_view;
 	g_pos_screen.xyz = g_pos_screen.xyz / g_pos_screen.w;
@@ -109,12 +116,12 @@ vec4 lovrmain(){
     //early culling
 	if (any(greaterThan(abs(g_pos_screen.xyz), vec3(1.3))))
 	{
-		//return vec4(-100, -100, -100, 1);
+		return vec4(-100, -100, -100, 1);
 	}
     // Load rotation scale and opacity
-    vec4 g_rot = rotations[InstanceIndex];
-	vec3 g_scale = scales[InstanceIndex];
-	float g_opacity = opacities[InstanceIndex];
+    vec4 g_rot = rotations[index];
+	vec3 g_scale = scales[index];
+	float g_opacity = opacities[index];
 
     // Compute 3D covariance martix of the associated gaussian, from rotation and size values
     // In paper it takes R and S and computes /Sigma
@@ -139,19 +146,19 @@ vec4 lovrmain(){
 	float det = (cov2d.x * cov2d.z - cov2d.y * cov2d.y);
 	if (det == 0.0f)
 		gl_Position = vec4(0.f, 0.f, 0.f, 0.f);
-    // Invter the determinant
+    // Invert the determinant
     float det_inv = 1.f / det;
 	// Some sort of reordered and rescaled representation of the 2D covariance, for the fragment shader
 	conic = vec3(cov2d.z * det_inv, cov2d.y * det_inv, cov2d.x * det_inv);
 	
     // I think this computes the size of the quad in pixels given the 2D gaussian 
-    // times 3 vause it's a gaussian interval of 99%??
+    // times 3 vause it's a gaussian interval of 99% i think
     vec2 quadwh_scr = vec2(3.f * sqrt(cov2d.x), 3.f * sqrt(cov2d.z));  // screen space half quad height and width
     // Screen dimenions
     wh = vec2(1280, 720);    
     // convter from pixel dimensions to normalized screen space
 	vec2 quadwh_ndc = quadwh_scr / wh * 2;  // in ndc space
-    // Create the flat quad by movign the 4 Vetices (VertexPosition) by the size of the covariance (quadwh_ndc) and add them to the center of the gaussian (g_pos_screen
+    // Create the flat quad by moving the 4 Vetices (VertexPosition) by the size of the covariance (quadwh_ndc) and add them to the center of the gaussian (g_pos_screen
     g_pos_screen.xy = g_pos_screen.xy + VertexPosition.xy * quadwh_ndc;
    
     // Vertex position in pixels inside the quad 
@@ -170,7 +177,7 @@ vec4 lovrmain(){
 	}
 
 
-    color = SH_C0 * vec3(colors[InstanceIndex]);
+    color = SH_C0 * vec3(colors[index]);
     color += 0.5f;
     return g_pos_screen;
 }
