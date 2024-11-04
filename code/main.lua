@@ -1,3 +1,5 @@
+pprint = require("pprint")
+
 ---Split string on separator, here a newline
 ---@param inputstr string
 ---@return table
@@ -81,10 +83,45 @@ function sort_gaussians(indices_buffer, positions)
     indices_buffer:setData(depth_index)
 end
 
+function load_demo()
+    positions = {
+            { 0, 0, 0 },
+            { 1, 0, 0 },
+            { 0, 1, 0 },
+            { 0, 0, 1 },
+        }
+    rotations = {
+            { 1, 0, 0, 0 },
+            { 1, 0, 0, 0 },
+            { 1, 0, 0, 0 },
+            { 1, 0, 0, 0 },
+        }
+    scales = {
+            { 0.03, 0.03, 0.03 },
+            { 0.2,  0.03, 0.03 },
+            { 0.03, 0.2,  0.03 },
+            { 0.03, 0.03, 0.2 },
+        }
+    opacities = {
+            1., .5, 1., .5
+        }
+    colors = {
+            { 1, 0, 1 },
+            { 1, 0, 0 },
+            { 0, 1, 0 },
+            { 0, 0, 1 },
+        }
+    n_points = 4
+    return positions, colors, opacities, rotations, scales
+end
+
 function lovr.load()
+
+    lovr.graphics.setTimingEnabled(true)
     -- load data from disk
     n_points = 559263
     positions, colors, opacities, rotations, scales = load_ply("some_ascii.ply")
+    ---load_demo()
     
     print("Fully loaded datapoints: ", #positions)
     local indices = {} 
@@ -163,6 +200,21 @@ function lovr.keyreleased(key, scancode)
     end
 end
 
+function lovr.update()
+    -- update rendering sort, too slow to be done at each frame as of now
+    if lovr.headset.wasPressed("hand/right", "a") then
+        sort_gaussians(indices_buffer, positions)
+    end
+    -- move between rendering modes
+    if lovr.headset.wasPressed("hand/left", "x") then
+        render_mode_selector = render_mode_selector + 1
+        print(render_mode_selector)
+    end
+    if lovr.headset.wasPressed("hand/left", "y") then
+        render_mode_selector = render_mode_selector - 1
+        print(render_mode_selector)
+    end
+end
 
 function lovr.draw(pass)
     -- might help reduce performance costs
@@ -203,4 +255,8 @@ function lovr.draw(pass)
 
     -- needed to sort the gaussians later
     pass_view_matrix = pass:getViewPose(1, lovr.math.newMat4(), true)
+
+    local stats = pass:getStats()
+    print(('Rendering takes %f milliseconds'):format(stats.gpuTime * 1e3))
+    pprint.pprint(stats)
 end
